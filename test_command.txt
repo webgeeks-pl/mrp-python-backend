@@ -1,0 +1,44 @@
+curl -L -X POST "mrp-python-backend.vercel.app/process" \
+        -H "Content-Type: application/json" \
+        -d '[
+      {
+        "type": "GHP",
+        "name": "Stół",
+        "bom_level": 0,
+        "initial_stock": 2,
+        "lead_time": 1,
+        "weeks": 10,
+        "total_order": 60,
+        "batches": [[5, 20], [7, 40]]
+      },
+      {
+        "type": "MRP",
+        "name": "Nogi",
+        "bom_level": 1,
+        "initial_stock": 40,
+        "lead_time": 2,
+        "usage_per_parent": 4,
+        "lot_size": 80,
+        "scheduled_receipts": []
+      },
+      {
+        "type": "MRP",
+        "name": "Blaty",
+        "bom_level": 1,
+        "initial_stock": 22,
+        "lead_time": 3,
+        "usage_per_parent": 1,
+        "lot_size": 40,
+        "scheduled_receipts": []
+      },
+      {
+        "type": "MRP",
+        "name": "Deska",
+        "bom_level": 2,
+        "initial_stock": 10,
+        "lead_time": 1,
+        "usage_per_parent": 1,
+        "lot_size": 50,
+        "scheduled_receipts": []
+      }
+    ]'
