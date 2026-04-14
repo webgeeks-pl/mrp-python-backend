@@ -160,19 +160,19 @@ def convert_ghp_to_table(ghp: GHPResultRequest) -> TableResponse:
     okresy = [str(i) for i in range(1, ghp.tygodnie + 1)]
     rows = [
         {
-            "row_label": "tydzien",
+            "rowLabel": "tydzien",
             "values": okresy,
         },
         {
-            "row_label": "przewidywany popyt",
+            "rowLabel": "przewidywany popyt",
             "values": ghp.popyt,
         },
         {
-            "row_label": "produkcja",
+            "rowLabel": "produkcja",
             "values": ghp.produkcja,
         },
         {
-            "row_label": "dostepne",
+            "rowLabel": "dostepne",
             "values": ghp.dostepne,
         },
     ]
@@ -194,31 +194,31 @@ def convert_mrp_to_table(mrp: MRPResultRequest) -> TableResponse:
     okresy = [str(i) for i in range(1, mrp.tygodnie + 1)]
     rows = [
         {
-            "row_label": "okres",
+            "rowLabel": "okres",
             "values": okresy,
         },
         {
-            "row_label": "calk. zapotrz.",
+            "rowLabel": "calk. zapotrz.",
             "values": mrp.calkowite_zapotrzebowanie,
         },
         {
-            "row_label": "planowane przyjecia",
+            "rowLabel": "planowane przyjecia",
             "values": mrp.planowane_przyjecia,
         },
         {
-            "row_label": "przewidywane na stanie",
+            "rowLabel": "przewidywane na stanie",
             "values": mrp.przewidywane_na_stanie,
         },
         {
-            "row_label": "zapotrzebowanie netto",
+            "rowLabel": "zapotrzebowanie netto",
             "values": mrp.zapotrzebowanie_netto,
         },
         {
-            "row_label": "planowane zamowienia",
+            "rowLabel": "planowane zamowienia",
             "values": mrp.planowane_zamowienia,
         },
         {
-            "row_label": "plan. przyj. zamowien",
+            "rowLabel": "plan. przyj. zamowien",
             "values": mrp.planowane_przyjecie_zamowien,
         },
     ]
