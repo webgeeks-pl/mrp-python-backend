@@ -38,6 +38,8 @@ class GHPResultRequest(BaseModel):
     produkcja: list[int]
     dostepne: list[int]
     stan_poczatkowy: int
+    bom_level: int
+    nazwa_elementu: str
 
 
 class MRPResultRequest(BaseModel):
@@ -96,6 +98,8 @@ def calculate_ghp_from_input(ghp_input: GHPInputRequest) -> GHPResultRequest:
         produkcja=wynik.produkcja,
         dostepne=wynik.dostepne,
         stan_poczatkowy=wynik.stan_poczatkowy,
+        bom_level=ghp_input.bom_level,
+        nazwa_elementu=ghp_input.name,
     )
 
 
@@ -177,8 +181,10 @@ def convert_ghp_to_table(ghp: GHPResultRequest) -> TableResponse:
         type="GHP",
         rows=rows,
         metadata={
-            "Stan Poczatkowy": ghp.stan_poczatkowy,
-            "Liczba Tygodni": ghp.tygodnie,
+            "itemName": ghp.nazwa_elementu,
+            "bomLevel": ghp.bom_level,
+            "initialStock": ghp.stan_poczatkowy,
+            "weeks": ghp.tygodnie,
         }
     )
 
@@ -221,12 +227,12 @@ def convert_mrp_to_table(mrp: MRPResultRequest) -> TableResponse:
         type="MRP",
         rows=rows,
         metadata={
-            "Nazwa Elementu": mrp.nazwa_elementu,
-            "Poziom BOM": mrp.poziom_bom,
-            "Stan Poczatkowy": mrp.stan_poczatkowy,
-            "Czas Realizacji": mrp.czas_realizacji,
-            "Wielkosc Partii": mrp.wielkosc_partii,
-            "Liczba Tygodni": mrp.tygodnie,
+            "itemName": mrp.nazwa_elementu,
+            "bomLevel": mrp.poziom_bom,
+            "initialStock": mrp.stan_poczatkowy,
+            "leadTime": mrp.czas_realizacji,
+            "lotSize": mrp.wielkosc_partii,
+            "weeks": mrp.tygodnie,
         }
     )
 
