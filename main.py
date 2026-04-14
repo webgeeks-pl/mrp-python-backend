@@ -6,6 +6,7 @@ from ghp_level0 import oblicz_ghp_poziom0, GHPResult
 
 # Input Request models (same as input.py format)
 class GHPInputRequest(BaseModel):
+    id: str
     type: Literal["GHP"] = "GHP"
     name: str
     bom_level: int
@@ -17,6 +18,8 @@ class GHPInputRequest(BaseModel):
 
 
 class MRPInputRequest(BaseModel):
+    id: str
+    parent_id: str
     type: Literal["MRP"] = "MRP"
     name: str
     bom_level: int
@@ -263,29 +266,51 @@ def process_results(
         raise HTTPException(status_code=400, detail="Inputs array cannot be empty")
     
     processed = []
-    ghp_result = None
     
-    for input_item in inputs:
+    # Store parent production demands by id
+    # GHP -> produkcja
+    # MRP -> planowane_zamowienia 
+    parent_productions = {}
+    
+    # Sort inputs by bom_level to ensure parents are computed before children
+    try:
+        sorted_inputs = sorted(inputs, key=lambda x: x.bom_level)
+    except Exception:
+        sorted_inputs = inputs
+        
+    for input_item in sorted_inputs:
         if isinstance(input_item, GHPInputRequest):
             # Calculate GHP
             ghp_result = calculate_ghp_from_input(input_item)
-            processed.append(convert_ghp_to_table(ghp_result))
+            processed.append((input_item.id, convert_ghp_to_table(ghp_result)))
+            
+            # The production becomes the demand source for its children
+            parent_productions[input_item.id] = ghp_result.produkcja
+            
         elif isinstance(input_item, MRPInputRequest):
-            # Calculate MRP using parent production
-            if ghp_result is None:
+            if input_item.parent_id not in parent_productions:
                 raise HTTPException(
                     status_code=400,
-                    detail="GHP input must be processed before MRP inputs"
+                    detail=f"Parent item with id '{input_item.parent_id}' not found or processed after its child."
                 )
-            mrp_result = calculate_mrp_from_input(input_item, ghp_result.produkcja)
-            processed.append(convert_mrp_to_table(mrp_result))
+            
+            # Calculate MRP using the specific parent's production
+            mrp_result = calculate_mrp_from_input(input_item, parent_productions[input_item.parent_id])
+            processed.append((input_item.id, convert_mrp_to_table(mrp_result)))
+            
+            # This item's planned orders become the demand source for its children
+            parent_productions[input_item.id] = mrp_result.planowane_zamowienia
         else:
             raise HTTPException(
                 status_code=400,
                 detail="Invalid input type. Must be GHP or MRP."
             )
+            
+    # Reorder processed results back to the original order submitted by the user
+    original_order_map = {item_id: table for item_id, table in processed}
+    final_processed = [original_order_map[item.id] for item in inputs if item.id in original_order_map]
     
-    return ProcessResultsResponse(results=processed)
+    return ProcessResultsResponse(results=final_processed)
 
 
 @app.get("/health", tags=["Health"])
