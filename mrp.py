@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from base import BaseInput
-
 from format import format_row
 
 
@@ -14,7 +13,7 @@ class MRPInput(BaseInput):
     scheduled_receipts: list[tuple[int, int]] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(frozen=True)
 class MRPResult:
     weeks: int
     total_demand: list[int]  # calkowite_zapotrzebowanie
@@ -60,7 +59,9 @@ def calculate_mrp(mrp_input: MRPInput, parent_production: list[int], scheduled_r
             offset_production[week] = parent_production[source_index]
 
     total_demand = [
-        ilosc * mrp_input.usage_per_parent for ilosc in offset_production]
+        ilosc * mrp_input.usage_per_parent for ilosc in offset_production
+    ]
+
     expected_stock = [0] * weeks
     net_demand = [0] * weeks
     planned_orders = [0] * weeks

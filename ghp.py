@@ -14,7 +14,7 @@ class GHPInput(BaseInput):
     batches: list[tuple[int, int]] = field(default_factory=list)
 
 
-@dataclass
+@dataclass(frozen=True)
 class GHPResult:
     weeks: int
     demand: list[int]  # popyt
