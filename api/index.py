@@ -1,1 +1,1 @@
-from main import app
+from main2 import app

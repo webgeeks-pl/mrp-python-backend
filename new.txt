@@ -1,0 +1,52 @@
+=== Symulacja GHP + MRP (poziom 1 Ostrze + Kij, poziom 2 Deska) ===
+
+GHP dla poziomu 0 (wyrób finalny)
+| tydzień            |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 |
+| ------------------ | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| przewidywany popyt |    |    |    |    | 20 |    | 40 |    |    |    |
+| produkcja          |    |    |    |    | 18 |    | 40 |    |    |    |
+| dostepne           |  2 |  2 |  2 |  2 |  0 |  0 |  0 |  0 |  0 |  0 |
+na stanie = 2
+czas realizacji = 1
+
+MRP poziom 1: Nogi
+| okres                  |   1 |   2 |   3 |   4 |   5 |   6 |   7 |   8 |   9 |  10 |
+| ---------------------- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| całk. zapotrz.         |     |     |     |  72 |     | 160 |     |     |     |     |
+| planowane przyjęcia    |     |     |     |     |     |     |     |     |     |     |
+| przewidywane na stanie |  40 |  40 |  40 |  48 |  48 | -32 | -32 | -32 | -32 | -32 |
+| zapotrzebowanie netto  |     |     |     |  32 |     | 112 |     |     |     |     |
+| planowane zamówienia   |     |  80 |     |  80 |     |     |     |     |     |     |
+| plan. przyj. zamówień  |     |     |     |  80 |     |  80 |     |     |     |     |
+czas realizacji = 2
+wielkosc partii = 80
+poziom BOM = 1
+na stanie = 40
+
+MRP poziom 1: Blaty
+| okres                  |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 |
+| ---------------------- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| całk. zapotrz.         |    |    |    | 18 |    | 40 |    |    |    |    |
+| planowane przyjęcia    |    |    |    |    |    |    |    |    |    |    |
+| przewidywane na stanie | 22 | 22 | 22 |  4 |  4 |  4 |  4 |  4 |  4 |  4 |
+| zapotrzebowanie netto  |    |    |    |    |    | 36 |    |    |    |    |
+| planowane zamówienia   |    |    | 40 |    |    |    |    |    |    |    |
+| plan. przyj. zamówień  |    |    |    |    |    | 40 |    |    |    |    |
+czas realizacji = 3
+wielkosc partii = 40
+poziom BOM = 1
+na stanie = 22
+
+MRP poziom 2: Deska
+| okres                  |  1 |  2 |  3 |  4 |  5 |  6 |  7 |  8 |  9 | 10 |
+| ---------------------- | -- | -- | -- | -- | -- | -- | -- | -- | -- | -- |
+| całk. zapotrz.         |    |    | 40 |    |    |    |    |    |    |    |
+| planowane przyjęcia    |    |    |    |    |    |    |    |    |    |    |
+| przewidywane na stanie | 10 | 10 | 20 | 20 | 20 | 20 | 20 | 20 | 20 | 20 |
+| zapotrzebowanie netto  |    |    | 30 |    |    |    |    |    |    |    |
+| planowane zamówienia   |    | 50 |    |    |    |    |    |    |    |    |
+| plan. przyj. zamówień  |    |    | 50 |    |    |    |    |    |    |    |
+czas realizacji = 1
+wielkosc partii = 50
+poziom BOM = 2
+na stanie = 10

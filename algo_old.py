@@ -10,8 +10,6 @@ from input import (
 )
 
 
-
-
 @dataclass
 class GHPResult:
     tygodnie: int

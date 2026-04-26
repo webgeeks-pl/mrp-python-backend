@@ -1,7 +1,7 @@
-from typing import Union, Optional, Literal
+from typing import Union,  Literal
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-from ghp_level0 import oblicz_ghp_poziom0, GHPResult
+from algo_old import oblicz_ghp_poziom0, oblicz_mrp_poziom1, zagreguj_planowane_przyjecia
 
 
 # Input Request models (same as input.py format)
@@ -40,6 +40,7 @@ class GHPResultRequest(BaseModel):
     stan_poczatkowy: int
     bom_level: int
     nazwa_elementu: str
+    czas_realizacji: int
 
 
 class MRPResultRequest(BaseModel):
@@ -83,14 +84,14 @@ def calculate_ghp_from_input(ghp_input: GHPInputRequest) -> GHPResultRequest:
     popyt = [0] * ghp_input.weeks
     for tydzien, ilosc in ghp_input.batches:
         popyt[tydzien - 1] += ilosc
-    
+
     # Calculate GHP
     wynik = oblicz_ghp_poziom0(
         tygodnie=ghp_input.weeks,
         stan_poczatkowy=ghp_input.initial_stock,
         popyt_po_tygodniach=popyt,
     )
-    
+
     return GHPResultRequest(
         type="GHP",
         tygodnie=wynik.tygodnie,
@@ -100,59 +101,101 @@ def calculate_ghp_from_input(ghp_input: GHPInputRequest) -> GHPResultRequest:
         stan_poczatkowy=wynik.stan_poczatkowy,
         bom_level=ghp_input.bom_level,
         nazwa_elementu=ghp_input.name,
+        czas_realizacji=ghp_input.lead_time,
     )
 
 
-def calculate_mrp_from_input(mrp_input: MRPInputRequest, parent_production: list[int]) -> MRPResultRequest:
-    """Calculate MRP from input data and parent production"""
-    tygodnie = len(parent_production)
-    
-    # Calculate total requirement
-    calkowite_zapotrzebowanie = [p * mrp_input.usage_per_parent for p in parent_production]
-    
-    # Scheduled receipts array
-    planowane_przyjecia = [0] * tygodnie
-    for tydzien, ilosc in mrp_input.scheduled_receipts:
-        if tydzien > 0 and tydzien <= tygodnie:
-            planowane_przyjecia[tydzien - 1] = ilosc
-    
-    # Simple MRP calculation
-    przewidywane_na_stanie = []
-    zapotrzebowanie_netto = []
-    planowane_zamowienia = []
-    planowane_przyjecie_zamowien = [0] * tygodnie
-    
-    available = mrp_input.initial_stock
-    
-    for i in range(tygodnie):
-        available = available + planowane_przyjecia[i] - calkowite_zapotrzebowanie[i]
-        przewidywane_na_stanie.append(max(0, available))
-        
-        net_demand = max(0, calkowite_zapotrzebowanie[i] - (available + planowane_przyjecia[i]))
-        zapotrzebowanie_netto.append(net_demand)
-        
-        # Order in multiples of lot size
-        if net_demand > 0:
-            order_qty = ((net_demand - 1) // mrp_input.lot_size + 1) * mrp_input.lot_size
-        else:
-            order_qty = 0
-        planowane_zamowienia.append(order_qty)
-    
+def calculate_mrp_from_input(mrp_input: MRPInputRequest, parent_production: list[int], ghp_lead_time: int, tygodnie: int) -> MRPResultRequest:
+    planowane_przyjecia_surowe = [
+        (int(tydzien), int(ilosc)) for tydzien, ilosc in mrp_input.scheduled_receipts
+    ]
+    planowane_przyjecia = zagreguj_planowane_przyjecia(
+        tygodnie=tygodnie, przyjecia_surowe=planowane_przyjecia_surowe)
+
+    wynik = oblicz_mrp_poziom1(
+        parent_production,
+        mrp_input.usage_per_parent,
+        mrp_input.initial_stock,
+        mrp_input.lead_time,
+        mrp_input.lot_size,
+        planowane_przyjecia,
+        mrp_input.name,
+        mrp_input.bom_level,
+        ghp_lead_time
+    )
+
     return MRPResultRequest(
         type="MRP",
-        tygodnie=tygodnie,
-        calkowite_zapotrzebowanie=calkowite_zapotrzebowanie,
-        planowane_przyjecia=planowane_przyjecia,
-        przewidywane_na_stanie=przewidywane_na_stanie,
-        zapotrzebowanie_netto=zapotrzebowanie_netto,
-        planowane_zamowienia=planowane_zamowienia,
-        planowane_przyjecie_zamowien=planowane_przyjecie_zamowien,
-        czas_realizacji=mrp_input.lead_time,
-        wielkosc_partii=mrp_input.lot_size,
-        poziom_bom=mrp_input.bom_level,
-        stan_poczatkowy=mrp_input.initial_stock,
-        nazwa_elementu=mrp_input.name,
+        tygodnie=wynik.tygodnie,
+        calkowite_zapotrzebowanie=wynik.calkowite_zapotrzebowanie,
+        planowane_przyjecia=wynik.planowane_przyjecia,
+        przewidywane_na_stanie=wynik.przewidywane_na_stanie,
+        zapotrzebowanie_netto=wynik.zapotrzebowanie_netto,
+        planowane_zamowienia=wynik.planowane_zamowienia,
+        planowane_przyjecie_zamowien=wynik.planowane_przyjecie_zamowien,
+        czas_realizacji=wynik.czas_realizacji,
+        wielkosc_partii=wynik.wielkosc_partii,
+        poziom_bom=wynik.poziom_bom,
+        stan_poczatkowy=wynik.stan_poczatkowy,
+        nazwa_elementu=wynik.nazwa_elementu,
     )
+
+# def calculate_mrp_from_input(mrp_input: MRPInputRequest, parent_production: list[int], ghp_lead_time: int) -> MRPResultRequest:
+#     """Calculate MRP from input data and parent production"""
+#     tygodnie = len(parent_production)
+
+#     moved_production = [0] * tygodnie
+#     for idx in range(tygodnie):
+#         zrodlo_idx = idx + ghp_lead_time
+#         if zrodlo_idx < tygodnie:
+#             moved_production[idx] = parent_production[zrodlo_idx]
+
+#     # Calculate total requirement
+#     calkowite_zapotrzebowanie = [p * mrp_input.usage_per_parent for p in moved_production]
+
+#     # Scheduled receipts array
+#     planowane_przyjecia = [0] * tygodnie
+#     for tydzien, ilosc in mrp_input.scheduled_receipts:
+#         if tydzien > 0 and tydzien <= tygodnie:
+#             planowane_przyjecia[tydzien - 1] = ilosc
+
+#     # Simple MRP calculation
+#     przewidywane_na_stanie = []
+#     zapotrzebowanie_netto = []
+#     planowane_zamowienia = []
+#     planowane_przyjecie_zamowien = [0] * tygodnie
+
+#     available = mrp_input.initial_stock
+
+#     for i in range(tygodnie):
+#         available = available + planowane_przyjecia[i] - calkowite_zapotrzebowanie[i]
+#         przewidywane_na_stanie.append(max(0, available))
+
+#         net_demand = max(0, calkowite_zapotrzebowanie[i] - (available + planowane_przyjecia[i]))
+#         zapotrzebowanie_netto.append(net_demand)
+
+#         # Order in multiples of lot size
+#         if net_demand > 0:
+#             order_qty = ((net_demand - 1) // mrp_input.lot_size + 1) * mrp_input.lot_size
+#         else:
+#             order_qty = 0
+#         planowane_zamowienia.append(order_qty)
+
+#     return MRPResultRequest(
+#         type="MRP",
+#         tygodnie=tygodnie,
+#         calkowite_zapotrzebowanie=calkowite_zapotrzebowanie,
+#         planowane_przyjecia=planowane_przyjecia,
+#         przewidywane_na_stanie=przewidywane_na_stanie,
+#         zapotrzebowanie_netto=zapotrzebowanie_netto,
+#         planowane_zamowienia=planowane_zamowienia,
+#         planowane_przyjecie_zamowien=planowane_przyjecie_zamowien,
+#         czas_realizacji=mrp_input.lead_time,
+#         wielkosc_partii=mrp_input.lot_size,
+#         poziom_bom=mrp_input.bom_level,
+#         stan_poczatkowy=mrp_input.initial_stock,
+#         nazwa_elementu=mrp_input.name,
+#     )
 
 
 def convert_ghp_to_table(ghp: GHPResultRequest) -> TableResponse:
@@ -176,7 +219,7 @@ def convert_ghp_to_table(ghp: GHPResultRequest) -> TableResponse:
             "values": ghp.dostepne,
         },
     ]
-    
+
     return TableResponse(
         type="GHP",
         rows=rows,
@@ -222,7 +265,7 @@ def convert_mrp_to_table(mrp: MRPResultRequest) -> TableResponse:
             "values": mrp.planowane_przyjecie_zamowien,
         },
     ]
-    
+
     return TableResponse(
         type="MRP",
         rows=rows,
@@ -261,49 +304,53 @@ def process_results(
 ):
     """
     Process an array of GHP or MRP input objects.
-    
+
     Each object in the array should be either:
     - A GHP input with type='GHP' and batches, weeks, etc.
     - An MRP input with type='MRP' and usage_per_parent, lot_size, etc.
-    
+
     Returns table-formatted data with columns and rows ready for frontend display.
     """
     if not inputs:
-        raise HTTPException(status_code=400, detail="Inputs array cannot be empty")
-    
+        raise HTTPException(
+            status_code=400, detail="Inputs array cannot be empty")
+
     processed = []
-    
+
     # Store parent production demands by id
     # GHP -> produkcja
-    # MRP -> planowane_zamowienia 
+    # MRP -> planowane_zamowienia
     parent_productions = {}
-    
+
     # Sort inputs by bom_level to ensure parents are computed before children
     try:
         sorted_inputs = sorted(inputs, key=lambda x: x.bom_level)
     except Exception:
         sorted_inputs = inputs
-        
+
     for input_item in sorted_inputs:
         if isinstance(input_item, GHPInputRequest):
             # Calculate GHP
             ghp_result = calculate_ghp_from_input(input_item)
             processed.append((input_item.id, convert_ghp_to_table(ghp_result)))
-            
+
             # The production becomes the demand source for its children
             parent_productions[input_item.id] = ghp_result.produkcja
-            
+
         elif isinstance(input_item, MRPInputRequest):
             if input_item.parent_id not in parent_productions:
                 raise HTTPException(
                     status_code=400,
                     detail=f"Parent item with id '{input_item.parent_id}' not found or processed after its child."
                 )
-            
+
             # Calculate MRP using the specific parent's production
-            mrp_result = calculate_mrp_from_input(input_item, parent_productions[input_item.parent_id])
+            real_czas_realizacji = ghp_result.czas_realizacji if input_item.bom_level == 1 else 0
+            mrp_result = calculate_mrp_from_input(
+                input_item, parent_productions[input_item.parent_id], real_czas_realizacji, ghp_result.tygodnie)
+
             processed.append((input_item.id, convert_mrp_to_table(mrp_result)))
-            
+
             # This item's planned orders become the demand source for its children
             parent_productions[input_item.id] = mrp_result.planowane_zamowienia
         else:
@@ -311,11 +358,12 @@ def process_results(
                 status_code=400,
                 detail="Invalid input type. Must be GHP or MRP."
             )
-            
+
     # Reorder processed results back to the original order submitted by the user
     original_order_map = {item_id: table for item_id, table in processed}
-    final_processed = [original_order_map[item.id] for item in inputs if item.id in original_order_map]
-    
+    final_processed = [original_order_map[item.id]
+                       for item in inputs if item.id in original_order_map]
+
     return ProcessResultsResponse(results=final_processed)
 
 
