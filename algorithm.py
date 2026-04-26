@@ -2,7 +2,7 @@ from __future__ import annotations
 
 
 from ghp import calculate_ghp, print_ghp_as_table, validate_ghp_input
-from input2 import (
+from input import (
     GHP_INPUT,
     MRP_LEVEL1_0_INPUT,
     MRP_LEVEL1_1_INPUT,

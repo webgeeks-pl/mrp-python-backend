@@ -66,11 +66,15 @@ def convert_mrp_to_table(mrp_result):
         "rows": [
             {"rowLabel": "okres", "values": weeks},
             {"rowLabel": "calk. zapotrz.", "values": mrp_result.total_demand},
-            {"rowLabel": "planowane przyjecia", "values": mrp_result.scheduled_receipts},
-            {"rowLabel": "przewidywane na stanie", "values": mrp_result.expected_stock},
+            {"rowLabel": "planowane przyjecia",
+                "values": mrp_result.scheduled_receipts},
+            {"rowLabel": "przewidywane na stanie",
+                "values": mrp_result.expected_stock},
             {"rowLabel": "zapotrzebowanie netto", "values": mrp_result.net_demand},
-            {"rowLabel": "planowane zamowienia", "values": mrp_result.planned_orders},
-            {"rowLabel": "plan. przyj. zamowien", "values": mrp_result.planned_order_acceptance},
+            {"rowLabel": "planowane zamowienia",
+                "values": mrp_result.planned_orders},
+            {"rowLabel": "plan. przyj. zamowien",
+                "values": mrp_result.planned_order_acceptance},
         ],
         "metadata": {
             "itemName": mrp_result.item_name,
@@ -86,7 +90,8 @@ def convert_mrp_to_table(mrp_result):
 @app.post("/process")
 def process_results(inputs: list[Union[GHPInputRequest, MRPInputRequest]]):
     if not inputs:
-        raise HTTPException(status_code=400, detail="Inputs array cannot be empty")
+        raise HTTPException(
+            status_code=400, detail="Inputs array cannot be empty")
 
     processed: list[dict] = []
     parent_production_by_id: dict[str, list[int]] = {}
@@ -168,7 +173,8 @@ def process_results(inputs: list[Union[GHPInputRequest, MRPInputRequest]]):
                     ghp_lead_time=current_ghp_lead_time,
                 )
 
-                processed.append({"source": input_item, "table": convert_mrp_to_table(mrp_result)})
+                processed.append(
+                    {"source": input_item, "table": convert_mrp_to_table(mrp_result)})
                 parent_production_by_id[input_item.id] = mrp_result.planned_orders
 
         input_position = {id(item): index for index, item in enumerate(inputs)}
