@@ -45,10 +45,10 @@ def convert_ghp_to_table(ghp_result, item_name: str, bom_level: int):
     return {
         "type": "GHP",
         "rows": [
-            {"rowLabel": "tydzien", "values": weeks},
+            {"rowLabel": "tydzień", "values": weeks},
             {"rowLabel": "przewidywany popyt", "values": ghp_result.demand},
             {"rowLabel": "produkcja", "values": ghp_result.production},
-            {"rowLabel": "dostepne", "values": ghp_result.available},
+            {"rowLabel": "dostępne", "values": ghp_result.available},
         ],
         "metadata": {
             "itemName": item_name,
